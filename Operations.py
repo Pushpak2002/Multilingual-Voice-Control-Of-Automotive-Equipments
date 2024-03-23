@@ -1,5 +1,12 @@
 import pyttsx3
-
+import openai
+import pyaudio
+import wave
+import time
+import pyttsx3  #python text to speech
+import speech_recognition as sr
+import speech_recognition as sr
+from datetime import date
 # This stack is to keep the track of the functions of the car
 class StringStack:
     def __init__(self):
@@ -109,7 +116,7 @@ def indicator(string,stack):
     elif  "on" in string:
         if "left" in string:
             print("turned on left indicator") #dont forgot to turn off right indicator
-            speak("turned on left indicator")
+            speak("turned on left indicator")  
             stack.push("left indicator")
         elif "right" in string:
             print("turned on right indicator")#dont forgot to turn off left indicator
@@ -187,16 +194,82 @@ def check_word_in_string(string,stack):
 
 # Main
 # speak("Hello I'm your assistant here to help u. Please give me command to proceed")
+from time import sleep
+r = sr.Recognizer()
+mic = sr.Microphone()
 while True:
-    speak("Enter command")
-    string = input("Enter a string: ")
-    #string = "wiper on"
-    string = string.lower()
-    stack = StringStack()
-    check_word_in_string(string,stack)
-    print("----------------------------------------")
-    print("stack elements")
-    print("----------------------------------------")
-    print(stack)
-    print("----------------------------------------")
-    print("----------------------------------------")
+    try:
+        print("turn on....")
+        with mic as source:
+            audio = r.listen(source)
+        words = r.recognize_google(audio)
+        if "Jarvis" in words:
+            speak("Hello sir, How can i help you")
+            CHUNK = 1024  # Number of frames per audio chunk
+            FORMAT = pyaudio.paInt16  # Audio format (16-bit integer)
+            CHANNELS = 1  # Number of channels (mono)
+            RATE = 44100  # Sampling rate (samples per second)
+            RECORD_SECONDS = 5  # Duration of recording
+
+            # Create an instance of PyAudio
+            p = pyaudio.PyAudio()
+
+            # Open a stream to record audio from the microphone
+            stream = p.open(format=FORMAT,
+                            channels=CHANNELS,
+                            rate=RATE,
+                            input=True,
+                            frames_per_buffer=CHUNK)
+
+            print("* Recording audio...")
+
+            frames = []
+
+            # Record audio for the specified duration
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                data = stream.read(CHUNK)
+                frames.append(data)
+
+            print("* Finished recording")
+
+            # Stop the stream and close it
+            stream.stop_stream()
+            stream.close()
+
+            # Terminate the PyAudio instance
+            p.terminate()
+
+            # Save the recorded audio to a WAV file
+            wf = wave.open("recorded.wav", "wb")
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+
+            print("* Audio saved to recorded_audio.wav")
+
+        #------------------------------------------------------------------
+            openai.organization = "org-iVuvSLiObMLmVJOihyNu2vqq"
+
+            openai.api_key= "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"
+
+            audio_file = open(r"C:\\Users\\Pushpak\\Desktop\\Car\\recorded.wav","rb")
+            transcript = openai.Audio.translate("whisper-1",audio_file)
+            string = transcript['text']
+            print(string)
+            
+            string = string.lower()
+            stack = StringStack()
+            check_word_in_string(string,stack)
+            print("----------------------------------------")
+            print("stack elements")
+            print("----------------------------------------")
+            print(stack)
+            print("----------------------------------------")
+            print("----------------------------------------")
+            time.sleep(1)
+        else:
+            print("could not recognize")
+    except:
+        continue
